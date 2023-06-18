@@ -1,5 +1,5 @@
 import pygame as pg
-from random import randint, randrange, choice
+from random import randint, randrange
 
 pg.init()
 
@@ -12,6 +12,11 @@ pg.display.set_caption('Snake')
 
 my_font = pg.font.SysFont(None, 30)
 
+block_size = 20
+
+block_img = pg.image.load('block.png')
+block_img = pg.transform.scale(block_img, (block_size, block_size))
+
 
 def draw_text(text, font, t_color, x_text, y_text):
     font_img = font.render(text, True, t_color)
@@ -19,15 +24,8 @@ def draw_text(text, font, t_color, x_text, y_text):
 
 
 BG = 0, 0, 10
-line_color = 0, 60, 110
-blue = 0, 40, 170
-green = 0, 153, 0
-red = 153, 0, 76
-violet = 76, 0, 153
+line_color = "#00222B"
 white = 255, 255, 255
-black = 0, 0, 0
-
-colors = [(255, 62, 0), (255, 97, 0), (255, 123, 0), (255, 149, 0), (255, 179, 0), (255, 214, 0)]
 
 
 def y_down(some_y):
@@ -58,28 +56,28 @@ def change_coord(some_list, some_length):
 
 def can_add_block_x_l(s_list, length):
     you_can_add_block = False
-    if s_list[length - 2][1] == s_list[length - 1][1] and s_list[length - 2][0] - s_list[length - 1][0] == 20:
+    if s_list[length - 2][1] == s_list[length - 1][1] and s_list[length - 2][0] - s_list[length - 1][0] == block_size:
         you_can_add_block = True
     return you_can_add_block
 
 
 def can_add_block_x_r(s_list, length):
     you_can_add_block = False
-    if s_list[length - 2][1] == s_list[length - 1][1] and s_list[length - 1][0] - s_list[length - 2][0] == 20:
+    if s_list[length - 2][1] == s_list[length - 1][1] and s_list[length - 1][0] - s_list[length - 2][0] == block_size:
         you_can_add_block = True
     return you_can_add_block
 
 
 def can_add_block_y_u(s_list, length):
     you_can_add_block = False
-    if s_list[length - 2][0] == s_list[length - 1][0] and s_list[length - 2][1] - s_list[length - 1][1] == 20:
+    if s_list[length - 2][0] == s_list[length - 1][0] and s_list[length - 2][1] - s_list[length - 1][1] == block_size:
         you_can_add_block = True
     return you_can_add_block
 
 
 def can_add_block_y_d(s_list, length):
     you_can_add_block = False
-    if s_list[length - 2][0] == s_list[length - 1][0] and s_list[length - 1][1] - s_list[length - 2][1] == 20:
+    if s_list[length - 2][0] == s_list[length - 1][0] and s_list[length - 1][1] - s_list[length - 2][1] == block_size:
         you_can_add_block = True
     return you_can_add_block
 
@@ -112,14 +110,14 @@ def set_initial_parameters():
     moving_up = False
     moving_right = False
     moving_left = False
-    snake_speed = 20
+    snake_speed = block_size
     food_x = 400
     food_y = 240
 
     snake_list = []
     snake_length = 4
     for i in range(snake_length):
-        snake_list.append([x0 - i * 20, y0])
+        snake_list.append([x0 - i * block_size, y0])
     color_list = []
 
     food_eaten = False
@@ -138,14 +136,16 @@ while run:
 
     screen.fill(BG)
 
-    # for i in range(0, W, 20):
-    #     pg.draw.line(screen, line_color, (i, 0), (i, H))
-    #     pg.draw.line(screen, line_color, (0, i), (W, i))
+    # drawing grid
+    for i in range(0, W, block_size):
+        pg.draw.line(screen, line_color, (i, 0), (i, H))
+        pg.draw.line(screen, line_color, (0, i), (W, i))
 
     # drawing food
     if not game_over:
-        pg.draw.rect(screen, white, (food_x, food_y, 20, 20))
+        pg.draw.rect(screen, white, (food_x, food_y, block_size, block_size))
 
+    # displaying score at the end og a game
     if game_over:
         draw_text('Game Over', my_font, white, 160, 130)
         draw_text('Your score =', my_font, white, 140, 180)
@@ -155,8 +155,8 @@ while run:
     # eating food and removing next food to another place
     if snake_list[0][0] == food_x and snake_list[0][1] == food_y:
         food_eaten = True
-        food_x = randrange(0, W - 20, 20)
-        food_y = randrange(0, H - 20, 20)
+        food_x = randrange(0, W - block_size, block_size)
+        food_y = randrange(0, H - block_size, block_size)
 
     # collision with itself
     for i in range(snake_length - 3):
@@ -175,68 +175,65 @@ while run:
         change_coord(snake_list, snake_length)
         snake_list[0][1] = y_down(snake_list[0][1])
         if can_add_block_x_l(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - 20, snake_list[snake_length - 1][1]])
+            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
             food_eaten = False
         elif can_add_block_x_r(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - 20, snake_list[snake_length - 1][1]])
+            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
             food_eaten = False
     elif moving_up:
         change_coord(snake_list, snake_length)
         snake_list[0][1] = y_up(snake_list[0][1])
         if can_add_block_x_l(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - 20, snake_list[snake_length - 1][1]])
+            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
             food_eaten = False
         elif can_add_block_x_r(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - 20, snake_list[snake_length - 1][1]])
+            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
             food_eaten = False
     elif moving_right:
         change_coord(snake_list, snake_length)
         snake_list[0][0] = x_right(snake_list[0][0])
         if can_add_block_y_u(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - 20])
+            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - block_size])
             snake_length += 1
             food_eaten = False
         elif can_add_block_y_d(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] + 20])
+            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] + block_size])
             snake_length += 1
             food_eaten = False
     elif moving_left:
         change_coord(snake_list, snake_length)
         snake_list[0][0] = x_left(snake_list[0][0])
         if can_add_block_y_u(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - 20])
+            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - block_size])
             snake_length += 1
             food_eaten = False
         elif can_add_block_y_d(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] + 20])
+            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] + block_size])
             snake_length += 1
             food_eaten = False
     # moving through the edge of the screen
     if snake_list[0][0] == W:
         snake_list[0][0] = 0
-    elif snake_list[0][0] == -20:
+    elif snake_list[0][0] == -block_size:
         snake_list[0][0] = W
-    elif snake_list[0][1] == -20:
+    elif snake_list[0][1] == -block_size:
         snake_list[0][1] = H
     elif snake_list[0][1] == H:
         snake_list[0][1] = 0
-    # filling color list
-    for i in range(snake_length):
-        #color_list.append((randint(0, 250), randint(0, 250), randint(0, 230)))
-        #color_list.append(snake_color)
-        color_list.append(choice(colors))
+
     # drawing the snake
     if not game_over:
         for i in range(snake_length):
-            pg.draw.rect(screen, color_list[i], (snake_list[i][0], snake_list[i][1], 20, 20))
+            screen.blit(block_img, (snake_list[i][0], snake_list[i][1]))
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
             run = False
+        # defining keys
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_DOWN and not moving_up:
                 moving_down = True
@@ -258,10 +255,11 @@ while run:
                 moving_right = False
                 moving_up = False
                 moving_down = False
+            # restart the game
             if event.key == pg.K_r and game_over:
                 set_initial_parameters()
 
     pg.display.flip()
 
-pg.quit()
+
 
