@@ -1,5 +1,5 @@
 import pygame as pg
-from random import randint, randrange
+from random import randrange
 
 pg.init()
 
@@ -28,27 +28,7 @@ line_color = "#00222B"
 white = 255, 255, 255
 
 
-def y_down(some_y):
-    some_y += snake_speed
-    return some_y
-
-
-def y_up(some_y):
-    some_y -= snake_speed
-    return some_y
-
-
-def x_right(some_x):
-    some_x += snake_speed
-    return some_x
-
-
-def x_left(some_x):
-    some_x -= snake_speed
-    return some_x
-
-
-def change_coord(some_list, some_length):
+def shift_coord(some_list, some_length):
     for j in reversed(range(some_length - 1)):
         for i in range(2):
             some_list[j + 1][i] = some_list[j][i]
@@ -93,15 +73,13 @@ snake_length = None
 food_x = None
 food_y = None
 snake_list = None
-color_list = None
 food_eaten = None
 game_over = None
-snake_color = None
 
 
 def set_initial_parameters():
     global x, y, moving_down, moving_up, moving_left, moving_right, \
-        snake_list, snake_speed, snake_length, food_x, food_y, color_list, food_eaten, game_over, snake_color
+        snake_list, snake_speed, snake_length, food_x, food_y, food_eaten, game_over
     x0 = 200
     y0 = 160
     x = x0
@@ -118,12 +96,9 @@ def set_initial_parameters():
     snake_length = 4
     for i in range(snake_length):
         snake_list.append([x0 - i * block_size, y0])
-    color_list = []
 
     food_eaten = False
     game_over = False
-
-    snake_color = randint(0, 250), randint(0, 250), randint(0, 250)
 
 
 set_initial_parameters()
@@ -136,10 +111,10 @@ while run:
 
     screen.fill(BG)
 
-    # drawing grid
-    for i in range(0, W, block_size):
-        pg.draw.line(screen, line_color, (i, 0), (i, H))
-        pg.draw.line(screen, line_color, (0, i), (W, i))
+    # # drawing grid
+    # for i in range(0, W, block_size):
+    #     pg.draw.line(screen, line_color, (i, 0), (i, H))
+    #     pg.draw.line(screen, line_color, (0, i), (W, i))
 
     # drawing food
     if not game_over:
@@ -172,19 +147,22 @@ while run:
                 snake_list[i][0] = 0
     # moving of the snake
     elif moving_down:
-        change_coord(snake_list, snake_length)
-        snake_list[0][1] = y_down(snake_list[0][1])
+        # change_coord shifts coordinates of length - 1 elements and next row changes coordinates of the head
+        shift_coord(snake_list, snake_length)
+        snake_list[0][1] += snake_speed
+        # checking if we must add a block from the left
         if can_add_block_x_l(snake_list, snake_length) and food_eaten:
             snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
             food_eaten = False
+        # checking if we must add a block from the right
         elif can_add_block_x_r(snake_list, snake_length) and food_eaten:
             snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
             food_eaten = False
     elif moving_up:
-        change_coord(snake_list, snake_length)
-        snake_list[0][1] = y_up(snake_list[0][1])
+        shift_coord(snake_list, snake_length)
+        snake_list[0][1] -= snake_speed
         if can_add_block_x_l(snake_list, snake_length) and food_eaten:
             snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
             snake_length += 1
@@ -194,8 +172,8 @@ while run:
             snake_length += 1
             food_eaten = False
     elif moving_right:
-        change_coord(snake_list, snake_length)
-        snake_list[0][0] = x_right(snake_list[0][0])
+        shift_coord(snake_list, snake_length)
+        snake_list[0][0] += snake_speed
         if can_add_block_y_u(snake_list, snake_length) and food_eaten:
             snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - block_size])
             snake_length += 1
@@ -205,8 +183,8 @@ while run:
             snake_length += 1
             food_eaten = False
     elif moving_left:
-        change_coord(snake_list, snake_length)
-        snake_list[0][0] = x_left(snake_list[0][0])
+        shift_coord(snake_list, snake_length)
+        snake_list[0][0] -= snake_speed
         if can_add_block_y_u(snake_list, snake_length) and food_eaten:
             snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - block_size])
             snake_length += 1
