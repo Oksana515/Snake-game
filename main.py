@@ -34,60 +34,37 @@ def shift_coord(some_list, some_length):
             some_list[j + 1][i] = some_list[j][i]
 
 
-def can_add_block_x_l(s_list, length):
-    you_can_add_block = False
-    if s_list[length - 2][1] == s_list[length - 1][1] and s_list[length - 2][0] - s_list[length - 1][0] == block_size:
-        you_can_add_block = True
-    return you_can_add_block
-
-
-def can_add_block_x_r(s_list, length):
-    you_can_add_block = False
-    if s_list[length - 2][1] == s_list[length - 1][1] and s_list[length - 1][0] - s_list[length - 2][0] == block_size:
-        you_can_add_block = True
-    return you_can_add_block
-
-
-def can_add_block_y_u(s_list, length):
-    you_can_add_block = False
-    if s_list[length - 2][0] == s_list[length - 1][0] and s_list[length - 2][1] - s_list[length - 1][1] == block_size:
-        you_can_add_block = True
-    return you_can_add_block
-
-
-def can_add_block_y_d(s_list, length):
-    you_can_add_block = False
-    if s_list[length - 2][0] == s_list[length - 1][0] and s_list[length - 1][1] - s_list[length - 2][1] == block_size:
-        you_can_add_block = True
-    return you_can_add_block
+def increase_snake_n_moving_food(s_list, length, some_x, some_y):
+    length += 1
+    s_list.insert(0, [some_x, some_y])
+    some_x = randrange(0, W - block_size, block_size)
+    some_y = randrange(0, H - block_size, block_size)
+    return s_list, length, some_x, some_y
 
 
 x = None
 y = None
-moving_down = None
-moving_up = None
-moving_right = None
-moving_left = None
+is_moving = None
 snake_speed = None
 snake_length = None
 food_x = None
 food_y = None
 snake_list = None
-food_eaten = None
+game_paused = None
+pause_counter = None
 game_over = None
 
 
 def set_initial_parameters():
-    global x, y, moving_down, moving_up, moving_left, moving_right, \
-        snake_list, snake_speed, snake_length, food_x, food_y, food_eaten, game_over
+    global x, y, is_moving, snake_list, snake_speed, snake_length, food_x, food_y, game_paused, pause_counter, game_over
     x0 = 200
     y0 = 160
     x = x0
     y = y0
-    moving_down = False
-    moving_up = False
-    moving_right = False
-    moving_left = False
+    # in is_moving axis 0 - x axis, axis 1 - y axis,
+    # direction 1 - x or y coordinate increases, direction -1 - decreases,
+    # direction 0 - coordinate doesn't change
+    is_moving = {'axis': 0, 'direction': 0}
     snake_speed = block_size
     food_x = 400
     food_y = 240
@@ -97,7 +74,8 @@ def set_initial_parameters():
     for i in range(snake_length):
         snake_list.append([x0 - i * block_size, y0])
 
-    food_eaten = False
+    game_paused = False
+    pause_counter = 0
     game_over = False
 
 
@@ -116,84 +94,33 @@ while run:
     #     pg.draw.line(screen, line_color, (i, 0), (i, H))
     #     pg.draw.line(screen, line_color, (0, i), (W, i))
 
-    # drawing food
-    if not game_over:
-        pg.draw.rect(screen, white, (food_x, food_y, block_size, block_size))
-
-    # displaying score at the end og a game
-    if game_over:
-        draw_text('Game Over', my_font, white, 160, 130)
-        draw_text('Your score =', my_font, white, 140, 180)
-        screen.blit(my_font.render(str(snake_length - 4), True, white), (270, 180))
-        draw_text('Press R to restart', my_font, white, 130, 250)
-
-    # eating food and removing next food to another place
-    if snake_list[0][0] == food_x and snake_list[0][1] == food_y:
-        food_eaten = True
-        food_x = randrange(0, W - block_size, block_size)
-        food_y = randrange(0, H - block_size, block_size)
-
-    # collision with itself
-    for i in range(snake_length - 3):
-        if snake_list[0][0] == snake_list[i+3][0] and snake_list[0][1] == snake_list[i+3][1]:
-            snake_speed = 0
-            game_over = True
-
     # initial moving of the snake
-    if not moving_down and not moving_up and not moving_left and not moving_right:
+    if is_moving['direction'] == 0:
+        if not game_paused:
+            shift_coord(snake_list, snake_length)
+            snake_list[0][0] += snake_speed
+        if snake_list[0][0] == food_x - block_size and snake_list[0][1] == food_y:
+            snake_list, snake_length, food_x, food_y = increase_snake_n_moving_food(snake_list, snake_length, food_x,
+                                                                                    food_y)
         for i in range(snake_length):
-            snake_list[i][0] += snake_speed
             if snake_list[i][0] == W:
                 snake_list[i][0] = 0
     # moving of the snake
-    elif moving_down:
+    else:
+        # coordinates of a head on the next step
+        next_head_pos = [snake_list[0][0], snake_list[0][1]]
+        next_head_pos[is_moving['axis']] += is_moving['direction'] * snake_speed
+        # if head eats food on the next step, block with the food coordinates is added to the head of the snake
+        # and the food block is moved on it's next position
+        if next_head_pos[0] == food_x and next_head_pos[1] == food_y:
+            snake_list, snake_length, food_x, food_y = increase_snake_n_moving_food(snake_list, snake_length, food_x,
+                                                                                    food_y)
         # change_coord shifts coordinates of length - 1 elements and next row changes coordinates of the head
-        shift_coord(snake_list, snake_length)
-        snake_list[0][1] += snake_speed
-        # checking if we must add a block from the left
-        if can_add_block_x_l(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
-            snake_length += 1
-            food_eaten = False
-        # checking if we must add a block from the right
-        elif can_add_block_x_r(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
-            snake_length += 1
-            food_eaten = False
-    elif moving_up:
-        shift_coord(snake_list, snake_length)
-        snake_list[0][1] -= snake_speed
-        if can_add_block_x_l(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
-            snake_length += 1
-            food_eaten = False
-        elif can_add_block_x_r(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0] - block_size, snake_list[snake_length - 1][1]])
-            snake_length += 1
-            food_eaten = False
-    elif moving_right:
-        shift_coord(snake_list, snake_length)
-        snake_list[0][0] += snake_speed
-        if can_add_block_y_u(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - block_size])
-            snake_length += 1
-            food_eaten = False
-        elif can_add_block_y_d(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] + block_size])
-            snake_length += 1
-            food_eaten = False
-    elif moving_left:
-        shift_coord(snake_list, snake_length)
-        snake_list[0][0] -= snake_speed
-        if can_add_block_y_u(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] - block_size])
-            snake_length += 1
-            food_eaten = False
-        elif can_add_block_y_d(snake_list, snake_length) and food_eaten:
-            snake_list.append([snake_list[snake_length - 1][0], snake_list[snake_length - 1][1] + block_size])
-            snake_length += 1
-            food_eaten = False
-    # moving through the edge of the screen
+        if not game_paused:
+            shift_coord(snake_list, snake_length)
+            snake_list[0][is_moving['axis']] += is_moving['direction'] * snake_speed
+
+    # moving through the field sides
     if snake_list[0][0] == W:
         snake_list[0][0] = 0
     elif snake_list[0][0] == -block_size:
@@ -208,34 +135,49 @@ while run:
         for i in range(snake_length):
             screen.blit(block_img, (snake_list[i][0], snake_list[i][1]))
 
+    # drawing food
+    if not game_over:
+        pg.draw.rect(screen, white, (food_x, food_y, block_size, block_size))
+
+    # collision with itself
+    for i in range(snake_length - 3):
+        if snake_list[0][0] == snake_list[i + 3][0] and snake_list[0][1] == snake_list[i + 3][1]:
+            snake_speed = 0
+            game_over = True
+
+    # displaying score at the end of a game
+    if game_over:
+        draw_text('Game Over', my_font, white, 160, 130)
+        draw_text('Your score =', my_font, white, 140, 180)
+        screen.blit(my_font.render(str(snake_length - 4), True, white), (270, 180))
+        draw_text('Press R to restart', my_font, white, 130, 250)
+
     for event in pg.event.get():
         if event.type == pg.QUIT:
             run = False
         # defining keys
         if event.type == pg.KEYDOWN:
-            if event.key == pg.K_DOWN and not moving_up:
-                moving_down = True
-                moving_up = False
-                moving_right = False
-                moving_left = False
-            if event.key == pg.K_UP and not moving_down:
-                moving_up = True
-                moving_down = False
-                moving_right = False
-                moving_left = False
-            if event.key == pg.K_RIGHT and not moving_left:
-                moving_right = True
-                moving_left = False
-                moving_up = False
-                moving_down = False
-            if event.key == pg.K_LEFT and not moving_right:
-                moving_left = True
-                moving_right = False
-                moving_up = False
-                moving_down = False
+            if event.key == pg.K_DOWN:
+                is_moving['axis'] = 1
+                is_moving['direction'] = 1
+            if event.key == pg.K_UP:
+                is_moving['axis'] = 1
+                is_moving['direction'] = -1
+            if event.key == pg.K_RIGHT:
+                is_moving['axis'] = 0
+                is_moving['direction'] = 1
+            if event.key == pg.K_LEFT:
+                is_moving['axis'] = 0
+                is_moving['direction'] = -1
             # restart the game
             if event.key == pg.K_r and game_over:
                 set_initial_parameters()
+            if event.key == pg.K_p:
+                pause_counter += 1
+                if pause_counter % 2 == 0:
+                    game_paused = False
+                else:
+                    game_paused = True
 
     pg.display.flip()
 
