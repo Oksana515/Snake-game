@@ -95,7 +95,6 @@ def set_initial_parameters():
     snake_speed = block_size
     food_x = randrange(0, W - block_size, block_size)
     food_y = randrange(0, H - block_size, block_size)
-
     snake_list = []
     snake_length = 4
     for i in range(snake_length):
@@ -131,7 +130,7 @@ while run:
             snake_list[0][0] += snake_speed
             # moving through the field sides
             snake_list[0] = moving_through_the_field_size(snake_list[0])
-        if snake_list[0][0] == food_x - block_size and snake_list[0][1] == food_y:
+        if snake_list[0][0] == food_x and snake_list[0][1] == food_y:
             snake_list, snake_length, food_x, food_y = increase_snake_n_moving_food(snake_list, snake_length, food_x,
                                                                                     food_y)
         for i in range(snake_length):
