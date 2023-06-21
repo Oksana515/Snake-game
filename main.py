@@ -7,7 +7,7 @@ clock = pg.time.Clock()
 
 W = 420
 H = 420
-screen = pg.display.set_mode((W, H))
+screen = pg.display.set_mode((W, H + 100))
 pg.display.set_caption('Snake')
 
 my_font = pg.font.SysFont(None, 30)
@@ -23,9 +23,8 @@ def draw_text(text, font, t_color, x_text, y_text):
     screen.blit(font_img, (x_text, y_text))
 
 
-BG = 0, 0, 10
-line_color = "#00222B"
-white = 255, 255, 255
+# define colors
+colours = {'bg': "#16375d", 'snake': "#ffffff", 'score': "#4ab9c4"}
 
 
 def shift_coord(some_list, some_length):
@@ -37,9 +36,29 @@ def shift_coord(some_list, some_length):
 def increase_snake_n_moving_food(s_list, length, some_x, some_y):
     length += 1
     s_list.insert(0, [some_x, some_y])
-    some_x = randrange(0, W - block_size, block_size)
-    some_y = randrange(0, H - block_size, block_size)
+    temp_x = randrange(0, W - block_size, block_size)
+    temp_y = randrange(0, H - block_size, block_size)
+    for i in range(length):
+        # if food appears on the snake it moves on another place
+        if s_list[i][0] == temp_x and s_list[i][1] == temp_y:
+            temp_x = randrange(0, W - block_size, block_size)
+            temp_y = randrange(0, H - block_size, block_size)
+        else:
+            some_x = temp_x
+            some_y = temp_y
     return s_list, length, some_x, some_y
+
+
+def moving_through_the_field_size(some_coords):
+    if some_coords[0] == W:
+        some_coords[0] = 0
+    elif some_coords[0] == -block_size:
+        some_coords[0] = W
+    elif some_coords[1] == -block_size:
+        some_coords[1] = H - block_size
+    elif some_coords[1] == H:
+        some_coords[1] = 0
+    return some_coords
 
 
 x = None
@@ -56,7 +75,7 @@ game_over = None
 
 
 def set_initial_parameters():
-    global x, y, is_moving, snake_list, snake_speed, snake_length, food_x, food_y, game_paused, pause_counter, game_over
+    global x, y, is_moving,snake_list, snake_speed, snake_length, food_x, food_y, game_over, game_paused, pause_counter
     x0 = 200
     y0 = 160
     x = x0
@@ -66,8 +85,8 @@ def set_initial_parameters():
     # direction 0 - coordinate doesn't change
     is_moving = {'axis': 0, 'direction': 0}
     snake_speed = block_size
-    food_x = 400
-    food_y = 240
+    food_x = randrange(0, W - block_size, block_size)
+    food_y = randrange(0, H - block_size, block_size)
 
     snake_list = []
     snake_length = 4
@@ -87,18 +106,22 @@ while run:
 
     clock.tick(10)
 
-    screen.fill(BG)
+    screen.fill(colours['bg'])
 
-    # # drawing grid
-    # for i in range(0, W, block_size):
-    #     pg.draw.line(screen, line_color, (i, 0), (i, H))
-    #     pg.draw.line(screen, line_color, (0, i), (W, i))
+    # displaying score and level number
+    pg.draw.rect(screen, colours['score'], pg.Rect(0, 420, W, 100))
+    draw_text('Level 1', my_font, colours['bg'], 40, 440)
+    draw_text('Pause: P', my_font, colours['bg'], 300, 440)
+    draw_text('Your score =', my_font, colours['bg'], 40, 480)
+    screen.blit(my_font.render(str(snake_length - 4), True, colours['bg']), (170, 480))
 
     # initial moving of the snake
     if is_moving['direction'] == 0:
         if not game_paused:
             shift_coord(snake_list, snake_length)
             snake_list[0][0] += snake_speed
+            # moving through the field sides
+            snake_list[0] = moving_through_the_field_size(snake_list[0])
         if snake_list[0][0] == food_x - block_size and snake_list[0][1] == food_y:
             snake_list, snake_length, food_x, food_y = increase_snake_n_moving_food(snake_list, snake_length, food_x,
                                                                                     food_y)
@@ -110,6 +133,8 @@ while run:
         # coordinates of a head on the next step
         next_head_pos = [snake_list[0][0], snake_list[0][1]]
         next_head_pos[is_moving['axis']] += is_moving['direction'] * snake_speed
+        # moving through the field sides
+        next_head_pos = moving_through_the_field_size(next_head_pos)
         # if head eats food on the next step, block with the food coordinates is added to the head of the snake
         # and the food block is moved on it's next position
         if next_head_pos[0] == food_x and next_head_pos[1] == food_y:
@@ -121,14 +146,7 @@ while run:
             snake_list[0][is_moving['axis']] += is_moving['direction'] * snake_speed
 
     # moving through the field sides
-    if snake_list[0][0] == W:
-        snake_list[0][0] = 0
-    elif snake_list[0][0] == -block_size:
-        snake_list[0][0] = W
-    elif snake_list[0][1] == -block_size:
-        snake_list[0][1] = H
-    elif snake_list[0][1] == H:
-        snake_list[0][1] = 0
+    snake_list[0] = moving_through_the_field_size(snake_list[0])
 
     # drawing the snake
     if not game_over:
@@ -137,7 +155,7 @@ while run:
 
     # drawing food
     if not game_over:
-        pg.draw.rect(screen, white, (food_x, food_y, block_size, block_size))
+        pg.draw.rect(screen, colours['snake'], (food_x, food_y, block_size, block_size))
 
     # collision with itself
     for i in range(snake_length - 3):
@@ -147,28 +165,27 @@ while run:
 
     # displaying score at the end of a game
     if game_over:
-        draw_text('Game Over', my_font, white, 160, 130)
-        draw_text('Your score =', my_font, white, 140, 180)
-        screen.blit(my_font.render(str(snake_length - 4), True, white), (270, 180))
-        draw_text('Press R to restart', my_font, white, 130, 250)
+        draw_text('Game Over', my_font, colours['score'], 160, 130)
+        draw_text('Your score =', my_font, colours['score'], 140, 180)
+        screen.blit(my_font.render(str(snake_length - 4), True, colours['score']), (270, 180))
+        draw_text('Press R to restart', my_font, colours['snake'], 130, 250)
+
+    motion_keys = {
+        pg.K_DOWN: (1, 1),
+        pg.K_UP: (1, -1),
+        pg.K_RIGHT: (0, 1),
+        pg.K_LEFT: (0, -1)
+    }
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
             run = False
         # defining keys
         if event.type == pg.KEYDOWN:
-            if event.key == pg.K_DOWN:
-                is_moving['axis'] = 1
-                is_moving['direction'] = 1
-            if event.key == pg.K_UP:
-                is_moving['axis'] = 1
-                is_moving['direction'] = -1
-            if event.key == pg.K_RIGHT:
-                is_moving['axis'] = 0
-                is_moving['direction'] = 1
-            if event.key == pg.K_LEFT:
-                is_moving['axis'] = 0
-                is_moving['direction'] = -1
+            if event.key in motion_keys:
+                if is_moving['axis'] != motion_keys[event.key][0]:  # snake can't go backwards
+                    is_moving['axis'] = motion_keys[event.key][0]
+                    is_moving['direction'] = motion_keys[event.key][1]
             # restart the game
             if event.key == pg.K_r and game_over:
                 set_initial_parameters()
@@ -180,6 +197,10 @@ while run:
                     game_paused = True
 
     pg.display.flip()
+
+
+
+
 
 
 
