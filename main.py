@@ -3,14 +3,6 @@ from random import randrange
 
 pg.init()
 
-# f = open("highscore.txt", "w")
-# f.write(str(40))
-# f.close()
-#
-# f = open("highscore.txt", "r+")
-# print(int(f.read()) + 40)
-# f.close()
-
 clock = pg.time.Clock()
 
 W = 420
@@ -25,14 +17,26 @@ block_size = 20
 block_img = pg.image.load('block.png')
 block_img = pg.transform.scale(block_img, (block_size, block_size))
 
+# define colors
+colours = {'bg': "#16375d", 'snake': "#ffffff", 'score': "#4ab9c4"}
+
 
 def draw_text(text, font, t_color, x_text, y_text):
     font_img = font.render(text, True, t_color)
     screen.blit(font_img, (x_text, y_text))
 
 
-# define colors
-colours = {'bg': "#16375d", 'snake': "#ffffff", 'score': "#4ab9c4"}
+def read_from_file(file_name):
+    some_file = open(file_name, "r")
+    file_content = some_file.read()
+    some_file.close()
+    return file_content
+
+
+def write_to_file(file_name, file_content):
+    some_file = open(file_name, "w")
+    some_file.write(file_content)
+    some_file.close()
 
 
 def shift_coord(some_list, some_length):
@@ -42,18 +46,16 @@ def shift_coord(some_list, some_length):
 
 
 def increase_snake_n_moving_food(s_list, length, some_x, some_y):
+    # increasing snake
     length += 1
     s_list.insert(0, [some_x, some_y])
-    temp_x = randrange(0, W - block_size, block_size)
-    temp_y = randrange(0, H - block_size, block_size)
-    for i in range(length):
-        # if food appears on the snake it moves on another place
-        if s_list[i][0] == temp_x and s_list[i][1] == temp_y:
-            temp_x = randrange(0, W - block_size, block_size)
-            temp_y = randrange(0, H - block_size, block_size)
-        else:
-            some_x = temp_x
-            some_y = temp_y
+    # moving food
+    while True:
+        some_x = randrange(0, W - block_size, block_size)
+        some_y = randrange(0, H - block_size, block_size)
+        if not [some_x, some_y] in s_list:
+            break
+
     return s_list, length, some_x, some_y
 
 
@@ -115,13 +117,16 @@ while run:
 
     screen.fill(colours['bg'])
 
-    # displaying score and level number
+    # displaying score, highscore and level number
     if not game_over:
         pg.draw.rect(screen, colours['score'], pg.Rect(0, 420, W, 100))
         draw_text('Level 1', my_font, colours['bg'], 40, 440)
-        draw_text('Pause: P', my_font, colours['bg'], 300, 440)
+        draw_text('Pause: P', my_font, colours['bg'], 245, 440)
         draw_text('Your score =', my_font, colours['bg'], 40, 480)
         screen.blit(my_font.render(str(snake_length - 4), True, colours['bg']), (170, 480))
+        h = read_from_file("hs.txt")
+        draw_text('Highscore:', my_font, colours['bg'], 245, 480)
+        screen.blit(my_font.render(h, True, colours['bg']), (355, 480))
 
     # initial moving of the snake
     if is_moving['direction'] == 0:
@@ -174,22 +179,14 @@ while run:
     # displaying score at the end of a game
     if game_over:
 
-        highscore_file = open("highscore.txt", "r")
-        h = highscore_file.read()
-        highscore_file.close()
+        h = read_from_file("hs.txt")
 
         if snake_length - 4 >= int(h):
-            highscore_file = open("highscore.txt", "w")
-            highscore_file.write(str(snake_length - 4))
-            highscore_file.close()
+            write_to_file("hs.txt", str(snake_length - 4))
 
-        highscore_file = open("highscore.txt", "r")
-        h = highscore_file.read()
-
+        h = read_from_file("hs.txt")
         draw_text('Highscore:', my_font, colours['score'], 140, 240)
         screen.blit(my_font.render(h, True, colours['score']), (270, 240))
-        highscore_file.close()
-
         draw_text('Game Over', my_font, colours['score'], 160, 100)
         draw_text('Your score:', my_font, colours['score'], 140, 200)
         screen.blit(my_font.render(str(snake_length - 4), True, colours['score']), (270, 200))
