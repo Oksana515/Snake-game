@@ -71,8 +71,6 @@ def moving_through_the_field_size(some_coords):
     return some_coords
 
 
-x = None
-y = None
 is_moving = None
 snake_speed = None
 snake_length = None
@@ -88,8 +86,6 @@ def set_initial_parameters():
     global x, y, is_moving,snake_list, snake_speed, snake_length, food_x, food_y, game_over, game_paused, pause_counter
     x0 = 200
     y0 = 160
-    x = x0
-    y = y0
     # in is_moving axis 0 - x axis, axis 1 - y axis,
     # direction 1 - x or y coordinate increases, direction -1 - decreases,
     # direction 0 - coordinate doesn't change
