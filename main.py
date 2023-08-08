@@ -134,9 +134,7 @@ while run:
         if snake_list[0][0] == food_x and snake_list[0][1] == food_y:
             snake_list, snake_length, food_x, food_y = increase_snake_n_moving_food(snake_list, snake_length, food_x,
                                                                                     food_y)
-        for i in range(snake_length):
-            if snake_list[i][0] == W:
-                snake_list[i][0] = 0
+
     # moving of the snake
     else:
         # coordinates of a head on the next step
